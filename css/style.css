@@ -487,7 +487,9 @@ kbd {
 .tool.on svg { fill: currentColor; }
 .tool.on svg { animation: lock 0.45s var(--spring); }
 
-.options { display: grid; gap: 0; }
+/* minmax(0, …) so the chip rows scroll sideways instead of widening the page */
+.options { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.option { min-width: 0; }
 .option .label { margin: 1.2rem 0 0.5rem; }
 .tabs { display: flex; gap: 0.3rem; overflow-x: auto; scrollbar-width: none; padding: 2px; margin: -2px; }
 .tabs::-webkit-scrollbar { display: none; }
@@ -743,7 +745,7 @@ footer a:hover { color: var(--text); }
     .ctl, .ctl--base, .ctl--go { grid-column: auto; }
     .ctl + .ctl { border-top: 0; padding-left: 1.1rem; border-left: 1px solid var(--line); }
     .ctl--go { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0.35rem; }
-    .options { grid-template-columns: auto 1fr; gap: 2rem; }
+    .options { grid-template-columns: auto minmax(0, 1fr); gap: 2rem; }
     .row { grid-template-columns: 12rem 1fr; }
     footer { flex-direction: row; justify-content: space-between; align-items: center; }
 }
