@@ -1,162 +1,68 @@
-# Generatore di Palette di Colori
+# Palette — generatore di palette di colori
 
-Un'applicazione web moderna per generare bellissime palette di colori armoniose con facilità. Perfetta per designer, sviluppatori e professionisti creativi che hanno bisogno di ispirazione cromatica rapida.
+Un generatore di palette veloce e riservato. Scegli un colore base e un'armonia, blocca i colori che ti piacciono, mescola gli altri ed esporta direttamente in codice. Niente registrazione, niente tracciamento, nessuna build: tutto gira e resta nel tuo browser.
 
-## Caratteristiche
+Versione inglese: [README.md](README.md)
 
-✨ **Caratteristiche Principali:**
+## Funzionalità
 
--   🎨 Genera palette di colori casuali con un solo clic
--   🔄 Rigenera singoli colori o intere palette
--   📋 Copia i colori negli appunti in formato hex
--   🌙 Attiva/disattiva tema scuro/chiaro per una visione confortevole
--   📱 Design completamente responsivo per tutti i dispositivi
--   ⌨️ Scorciatoie da tastiera per accesso rapido
--   💾 Salva le tue palette preferite (prossimamente)
--   🎯 Modalità di armonia colore multiple (prossimamente)
+-   **Nove armonie**: analoga, monocromatica, complementare, complementare divisa, triadica, tetradica, quadrata, toni e tinte, e "sorprendimi". Il colore base è sempre presente nella palette.
+-   **Blocca e mescola**: blocca un colore e premi <kbd>spazio</kbd> (o Genera) per averne di nuovi che si abbinano a quelli bloccati.
+-   **Modifica ogni colore** con il selettore, **trascina per riordinare**, aggiungi o togli colori (da 2 a 10).
+-   **Sfumature**: una scala di 11 toni (50–950) per ogni colore, con dettagli RGB, HSL e contrasto.
+-   **Etichette di contrasto**: ogni colore mostra il livello WCAG (AAA / AA / AA Large) per il testo più leggibile.
+-   **Nomi dei colori** per ogni campione.
+-   **Anteprima daltonismo**: simulazione di protanopia, deuteranopia, tritanopia e scala di grigi.
+-   **Palette da un'immagine**: trascina una foto e i suoi colori principali vengono estratti in locale (k-means nello spazio Lab); niente viene caricato.
+-   **Esporta** in variabili CSS, SCSS, configurazione Tailwind, JSON, array o SVG, e scarica un'immagine PNG.
+-   **Copia come** HEX, RGB o HSL.
+-   Cronologia **annulla / ripeti**.
+-   **Salva le palette** sul dispositivo e **condividile**: l'URL contiene sempre la palette attuale.
+-   Tema chiaro e scuro, sei lingue (EN, IT, FR, DE, ES, JA), scorciatoie da tastiera, responsive dagli smartphone piccoli agli schermi larghi.
 
-## Guida Rapida
+## Scorciatoie da tastiera
 
-### Prerequisiti
+| Tasto                  | Azione                                  |
+| ---------------------- | --------------------------------------- |
+| <kbd>Spazio</kbd>      | Nuova palette (i colori bloccati restano) |
+| <kbd>1</kbd>–<kbd>9</kbd> | Blocca o sblocca quel colore         |
+| <kbd>C</kbd>           | Copia tutti i colori                    |
+| <kbd>S</kbd>           | Salva la palette                        |
+| <kbd>E</kbd>           | Apri esporta                            |
+| <kbd>Ctrl</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Maiusc</kbd> <kbd>Z</kbd> | Annulla / ripeti |
 
--   Browser web moderno (Chrome, Firefox, Safari, Edge)
--   Nessuna installazione richiesta - è un'applicazione basata su web
+## Avvio in locale
 
-### Installazione
-
-1. Clona il repository:
-
-```bash
-git clone https://github.com/tuonome/colorPaletteGenerator.git
-cd colorPaletteGenerator
-```
-
-2. Apri l'applicazione:
-
-```bash
-# Apri semplicemente index.html nel tuo browser
-open index.html
-```
-
-Oppure usa un server di sviluppo locale:
+È un sito statico. Poiché usa moduli ES e carica i file di lingua con `fetch`, va servito via HTTP invece di aprire il file direttamente:
 
 ```bash
-# Usando Python 3
-python -m http.server 8000
-
-# Usando Node.js (con http-server)
-npx http-server
+python3 -m http.server 8000
 ```
 
-Quindi accedi a `http://localhost:8000` nel tuo browser.
+Poi apri `http://localhost:8000`.
 
-## Utilizzo
-
-### Uso Básico
-
-1. **Genera Palette**: Fai clic sul pulsante "Genera" per creare una nuova palette di colori casuale
-2. **Copia Colore**: Fai clic su qualsiasi campione di colore per copiare il suo codice hex negli appunti
-3. **Blocca Colore**: Blocca i singoli colori per mantenerli quando rigenerando
-4. **Cambia Tema**: Utilizza il pulsante del tema per passare tra i temi chiaro e scuro
-
-### Scorciatoie da Tastiera
-
--   `Spazio` - Genera nuova palette
--   `C` - Copia l'ultimo colore copiato
--   `T` - Attiva/disattiva tema (scuro/chiaro)
-
-## Struttura del Progetto
+## Struttura del progetto
 
 ```
 colorPaletteGenerator/
-├── index.html              # File HTML principale
-├── css/
-│   └── style.css           # Foglio di stile
+├── index.html          # markup, finestre e filtri SVG per il daltonismo
+├── css/style.css       # token di design (condivisi con egenesio.com), layout, componenti
 ├── js/
-│   ├── main.js             # Logica principale dell'applicazione
-│   ├── colorPaletteGenerator.js  # Algoritmi di generazione colori
-│   └── theme.js            # Gestione del tema
-├── static/
-│   ├── fonts/              # Font personalizzati
-│   └── images/             # Immagini e icone
-├── README.md               # File README (inglese)
-├── README_IT.md            # File README (italiano)
-└── LICENSE                 # Informazioni sulla licenza
+│   ├── app.js          # stato, cronologia, rendering e interazioni
+│   ├── palette.js      # schemi di armonia, colori casuali, scale di toni
+│   ├── colors.js       # conversioni, contrasto WCAG, nomi, estrazione da immagine
+│   ├── names.js        # elenco dei nomi dei colori
+│   ├── lang.js         # caricamento traduzioni
+│   └── theme.js        # tema chiaro/scuro
+├── lang/*.json         # testi EN, IT, FR, DE, ES, JA
+├── fonts/              # Syne e DM Mono (SIL Open Font License)
+└── icons/favicon.svg
 ```
-
-## Tecnologie Utilizzate
-
--   **HTML5** - Markup semantico
--   **CSS3** - Stili moderni con flexbox/grid
--   **JavaScript (ES6+)** - Funzionalità dinamiche
--   **SVG** - Icone e grafica vettoriale
-
-## Spiegazione delle Caratteristiche
-
-### Generazione di Colori
-
-Il generatore utilizza algoritmi accuratamente sintonizzati per creare palette di colori armoniose che funzionano bene insieme. I colori vengono generati nello spazio HSL per garantire un migliore equilibrio visivo.
-
-### Supporto del Tema
-
-Passa tra temi chiari e scuri con un solo clic. La tua preferenza viene ricordata nell'archivio locale.
-
-### Design Responsivo
-
-Funziona perfettamente su dispositivi desktop, tablet e mobili con layout ottimizzati per ogni dimensione dello schermo.
-
-## Supporto Browser
-
-| Browser | Supporto    |
-| ------- | ----------- |
-| Chrome  | ✅ Completo |
-| Firefox | ✅ Completo |
-| Safari  | ✅ Completo |
-| Edge    | ✅ Completo |
-| IE 11   | ❌ No       |
-
-## Contribuire
-
-I contributi sono benvenuti! Per contribuire:
-
-1. Fai un fork del repository
-2. Crea un branch di funzionalità (`git checkout -b feature/AmazingFeature`)
-3. Esegui il commit delle tue modifiche (`git commit -m 'Aggiungi qualche AmazingFeature'`)
-4. Esegui il push al branch (`git push origin feature/AmazingFeature`)
-5. Apri una Pull Request
-
-Assicurati che il tuo codice segua lo stile esistente e includa commenti appropriati.
-
-## Miglioramenti Futuri
-
--   💾 Salva e gestisci le palette di colori
--   🎨 Modalità di armonia colore multiple (complementare, analoga, triadica, ecc.)
--   📤 Esporta palette in vari formati (JSON, CSS, PNG)
--   🔍 Integrazione del selezionatore di colori
--   📚 Cronologia colori
--   🎯 Intervalli di colori personalizzati
 
 ## Licenza
 
-Questo progetto è concesso in licenza secondo la Licenza MIT - vedi il file [LICENSE](LICENSE) per i dettagli.
+MIT, vedi [LICENSE](LICENSE). I font sono sotto SIL Open Font License (vedi `fonts/`).
 
-## Autore
+## Autrice
 
-Creato con ❤️ da [Il Tuo Nome]
-
-## Ringraziamenti
-
--   Ispirato da moderni strumenti di palette di colori
--   Grazie alla comunità open-source per le librerie e le risorse
--   Icone da Bootstrap Icons
-
-## Supporto
-
-Hai domande o trovato un bug?
-
--   📧 Apri un problema su GitHub
--   💬 Sentiti libero di contribuire con miglioramenti
-
----
-
-**Buon lavoro con i colori!** 🎨
+Creato da [Elisa](https://egenesio.com). Se ti è utile, puoi [offrirmi un caffè su Ko-fi](https://ko-fi.com/egenesio).

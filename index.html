@@ -1,202 +1,335 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
     <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <title>Palette — colour palette generator</title>
+        <meta
+            name="description"
+            content="Free colour palette generator: harmony schemes, locks, shades, contrast checks, colour-blind preview, image extraction and export to CSS, Tailwind, JSON and PNG." />
+        <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+        <!-- browser tab -->
+        <link rel="icon" href="icons/favicon.ico" sizes="32x32" />
+        <link rel="icon" type="image/svg+xml" href="icons/favicon.svg" />
+        <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96.png" />
+        <!-- home screen -->
+        <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+        <script>
+            /* set the theme before first paint: saved choice, else the system setting */
+            (function () {
+                var t;
+                try {
+                    t = localStorage.getItem("theme");
+                } catch (e) {}
+                if (t !== "light" && t !== "dark")
+                    t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+                document.documentElement.setAttribute("data-theme", t);
+            })();
+        </script>
+        <link rel="preload" href="fonts/syne-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="fonts/dm-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
         <link rel="stylesheet" href="css/style.css" />
-        <link
-            rel="icon"
-            href="static/images/palette_logo.png"
-            type="image/png" />
-        <title>Color Palette Generator</title>
+        <script src="js/theme.js" defer></script>
+        <script type="module" src="js/app.js"></script>
     </head>
     <body>
-        <!-- HEADER -->
-        <header>
-            <div class="theme-btns">
-                <button
-                    class="theme-toggle"
-                    id="theme-toggle"
-                    aria-label="Toggle Dark/Light Theme">
-                    <div id="dark-icon">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            fill="currentColor"
-                            class="bi bi-moon-fill"
-                            viewBox="0 0 16 16">
+        <!-- NAV -->
+        <nav class="nav" aria-label="Main">
+            <a href="./" class="nav__logo" aria-label="Palette home">
+                <span class="nav__mark" id="nav-mark" aria-hidden="true"><i></i><i></i><i class="on"></i><i></i><i></i></span>palette
+            </a>
+            <div class="nav__links">
+                <button type="button" class="nav__btn nav__text" id="go-saved" data-i18n="nav-saved">Saved</button>
+                <button type="button" class="nav__btn nav__icon" id="open-help" data-i18n-label="help-title">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="2.5" y="6" width="19" height="12" rx="2" />
+                        <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8" />
+                    </svg>
+                </button>
+                <div class="nav-lang">
+                    <button
+                        type="button"
+                        class="nav__btn"
+                        id="lang-toggle"
+                        aria-label="Change language"
+                        aria-haspopup="true"
+                        aria-expanded="false">
+                        <span id="lang-current">EN</span>
+                        <span class="nav__arrow" aria-hidden="true">▾</span>
+                    </button>
+                    <ul id="lang-menu" class="lang-menu">
+                        <li data-lang="en" role="button" tabindex="0"><span>EN</span>English</li>
+                        <li data-lang="it" role="button" tabindex="0"><span>IT</span>Italiano</li>
+                        <li data-lang="fr" role="button" tabindex="0"><span>FR</span>Français</li>
+                        <li data-lang="de" role="button" tabindex="0"><span>DE</span>Deutsch</li>
+                        <li data-lang="es" role="button" tabindex="0"><span>ES</span>Español</li>
+                        <li data-lang="ja" role="button" tabindex="0"><span>JA</span>日本語</li>
+                    </ul>
+                </div>
+                <button type="button" class="nav__btn nav__icon" id="theme-toggle" aria-label="Switch light or dark theme">
+                    <span class="theme-icon"
+                        ><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg
+                        ><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="4" />
                             <path
-                                d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278" />
-                        </svg>
-                    </div>
-                    <div id="light-icon">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            fill="currentColor"
-                            class="bi bi-brightness-high-fill"
-                            viewBox="0 0 16 16">
-                            <path
-                                d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708" />
-                        </svg>
-                    </div>
+                                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg
+                    ></span>
                 </button>
             </div>
-            <button
-                class="menu-toggle theme-toggle"
-                id="menu-toggle"
-                aria-label="Toggle Controls Menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <h1>Color Palette Generator</h1>
-        </header>
+        </nav>
 
-        <!-- MAIN -->
-        <div class="palette-generator-container">
-            <div class="controls">
-                <div class="separator">
-                    <label for="base-color">Base Color:</label>
-                    <input
-                        type="color"
-                        id="base-color"
-                        name="base-color"
-                        value="#ff5733" />
+        <main class="app" id="main">
+            <!-- INTRO -->
+            <header class="intro">
+                <p class="tag">a tool by egenesio</p>
+                <h1 class="title"><span>Pal</span><span class="accent">ette.</span></h1>
+                <p class="lede" data-i18n="lede">
+                    Harmonious colour palettes in one tap. Lock the colours you love, check contrast, export
+                    to code. Everything stays on your device.
+                </p>
+            </header>
+
+            <!-- CONTROLS -->
+            <section class="controls" aria-label="Palette settings">
+                <div class="ctl ctl--base">
+                    <span class="ctl__label" data-i18n="base">Base colour</span>
+                    <div class="ctl__row">
+                        <label class="base-chip" id="base-chip" data-i18n-label="pick-base">
+                            <input type="color" id="base-color" value="#ff5733" />
+                        </label>
+                        <input
+                            type="text"
+                            id="base-hex"
+                            class="hex-input"
+                            value="#FF5733"
+                            maxlength="7"
+                            spellcheck="false"
+                            autocomplete="off"
+                            aria-label="Base colour hex" />
+                        <button type="button" class="icon-btn" id="random-base" data-i18n-label="random-base">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="3.5" y="3.5" width="17" height="17" rx="3.5" />
+                                <path d="M8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="separator">
-                    <label for="num-colors">Number of Colors:</label>
-                    <input
-                        type="number"
-                        id="num-colors"
-                        name="num-colors"
-                        min="2"
-                        max="10"
-                        value="5" />
+                <div class="ctl">
+                    <label class="ctl__label" for="scheme" data-i18n="scheme">Harmony</label>
+                    <div class="select-wrap">
+                        <select id="scheme"></select>
+                        <span class="select-wrap__arrow" aria-hidden="true">▾</span>
+                    </div>
                 </div>
 
-                <div class="separator">
-                    <label for="scheme-type">Scheme Type:</label>
-                    <select id="scheme-type" name="scheme-type">
-                        <option value="analogous">Analogous</option>
-                        <option value="complementary">Complementary</option>
-                        <option value="triadic">Triadic</option>
-                        <option value="tetradic">Tetradic</option>
-                        <option value="monochromatic">Monochromatic</option>
-                        <option value="shades_and_tints">
-                            Shades and Tints
-                        </option>
-                    </select>
+                <div class="ctl ctl--count">
+                    <span class="ctl__label" data-i18n="count">Colours</span>
+                    <div class="stepper">
+                        <button type="button" class="icon-btn" id="count-dec" aria-label="Fewer colours">−</button>
+                        <output id="count" aria-live="polite">5</output>
+                        <button type="button" class="icon-btn" id="count-inc" aria-label="More colours">+</button>
+                    </div>
                 </div>
 
-                <div class="separator">
-                    <button id="generate-palette-btn">Generate</button>
+                <div class="ctl ctl--go">
+                    <button type="button" class="btn" id="generate">
+                        <span data-i18n="generate">Generate</span>
+                    </button>
+                    <span class="muted ctl__hint"><kbd>space</kbd> <span data-i18n="or-space">to shuffle</span></span>
+                </div>
+            </section>
+
+            <!-- PALETTE -->
+            <section class="strip-wrap" aria-label="Palette">
+                <div class="strip" id="strip"></div>
+            </section>
+
+            <!-- TOOLS -->
+            <div class="tools" role="toolbar" aria-label="Palette tools">
+                <button type="button" class="tool" id="t-undo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 9h11a5 5 0 0 1 0 10h-4" />
+                        <path d="M8 5 4 9l4 4" />
+                    </svg>
+                    <span data-i18n="undo">Undo</span>
+                </button>
+                <button type="button" class="tool" id="t-redo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M20 9H9a5 5 0 0 0 0 10h4" />
+                        <path d="m16 5 4 4-4 4" />
+                    </svg>
+                    <span data-i18n="redo">Redo</span>
+                </button>
+                <button type="button" class="tool" id="t-save" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z" />
+                    </svg>
+                    <span data-i18n="save">Save</span>
+                </button>
+                <button type="button" class="tool" id="t-share">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M10 14a4 4 0 0 0 5.7 0l3.6-3.6a4 4 0 0 0-5.7-5.7l-1 1" />
+                        <path d="M14 10a4 4 0 0 0-5.7 0l-3.6 3.6a4 4 0 0 0 5.7 5.7l1-1" />
+                    </svg>
+                    <span data-i18n="share">Share</span>
+                </button>
+                <button type="button" class="tool" id="t-export">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14" />
+                    </svg>
+                    <span data-i18n="export">Export</span>
+                </button>
+                <button type="button" class="tool" id="t-image">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+                        <circle cx="9" cy="10" r="1.8" />
+                        <path d="m20.5 16-4.5-4.5L6 19.5" />
+                    </svg>
+                    <span data-i18n="from-image">Image</span>
+                </button>
+            </div>
+
+            <!-- VIEW OPTIONS -->
+            <div class="options">
+                <div class="option">
+                    <span class="label" data-i18n="copy-as">Copy as</span>
+                    <div class="tabs" id="format-tabs" role="tablist">
+                        <button type="button" class="tab" role="tab" data-format="hex">HEX</button>
+                        <button type="button" class="tab" role="tab" data-format="rgb">RGB</button>
+                        <button type="button" class="tab" role="tab" data-format="hsl">HSL</button>
+                    </div>
+                </div>
+                <div class="option">
+                    <span class="label" data-i18n="vision">Vision preview</span>
+                    <div class="tabs" id="vision-tabs" role="tablist">
+                        <button type="button" class="tab" role="tab" data-vision="none" data-i18n="v-none">Normal</button>
+                        <button type="button" class="tab" role="tab" data-vision="protanopia" data-i18n="v-protanopia">Protanopia</button>
+                        <button type="button" class="tab" role="tab" data-vision="deuteranopia" data-i18n="v-deuteranopia">Deuteranopia</button>
+                        <button type="button" class="tab" role="tab" data-vision="tritanopia" data-i18n="v-tritanopia">Tritanopia</button>
+                        <button type="button" class="tab" role="tab" data-vision="achromatopsia" data-i18n="v-achromatopsia">Greyscale</button>
+                    </div>
                 </div>
             </div>
 
-            <div id="palette-container"></div>
-        </div>
+            <!-- SAVED -->
+            <section class="saved" id="saved">
+                <h2 class="label" data-i18n="saved-title">Saved palettes</h2>
+                <ul class="rows" id="saved-list"></ul>
+                <p class="muted saved__empty" id="saved-empty" data-i18n="saved-empty">
+                    Nothing saved yet. Tap the heart to keep a palette here.
+                </p>
+            </section>
+        </main>
 
-        <!-- MOBILE MENU -->
-        <div class="controls-menu" id="controls-menu">
-            <div class="separator">
-                <label for="base-color">Base Color:</label>
-                <input
-                    type="color"
-                    id="base-color-mobile"
-                    name="base-color"
-                    value="#ff5733" />
+        <!-- SHADES -->
+        <dialog class="sheet" id="shades-sheet" aria-labelledby="shades-title">
+            <div class="sheet__head">
+                <h2 id="shades-title" data-i18n="shades-title">Shades</h2>
+                <button type="button" class="sheet__close" data-close data-i18n-label="close">×</button>
             </div>
+            <div class="shade-info" id="shade-info"></div>
+            <h3 class="label" data-i18n="shades-pick">Tap a shade to use it</h3>
+            <ul class="shades" id="shades-list"></ul>
+        </dialog>
 
-            <div class="separator">
-                <label for="num-colors">Number of Colors:</label>
-                <input
-                    type="number"
-                    id="num-colors-mobile"
-                    name="num-colors"
-                    min="2"
-                    max="10"
-                    value="5" />
+        <!-- EXPORT -->
+        <dialog class="sheet sheet--wide" id="export-sheet" aria-labelledby="export-title">
+            <div class="sheet__head">
+                <h2 id="export-title" data-i18n="export">Export</h2>
+                <button type="button" class="sheet__close" data-close data-i18n-label="close">×</button>
             </div>
+            <div class="export-preview" id="export-preview" aria-hidden="true"></div>
+            <div class="tabs" id="export-tabs" role="tablist">
+                <button type="button" class="tab" role="tab" data-export="css">CSS</button>
+                <button type="button" class="tab" role="tab" data-export="scss">SCSS</button>
+                <button type="button" class="tab" role="tab" data-export="tailwind">Tailwind</button>
+                <button type="button" class="tab" role="tab" data-export="json">JSON</button>
+                <button type="button" class="tab" role="tab" data-export="array">Array</button>
+                <button type="button" class="tab" role="tab" data-export="svg">SVG</button>
+            </div>
+            <pre class="code" id="export-code" tabindex="0"></pre>
+            <div class="actions">
+                <button type="button" class="btn" id="export-copy" data-i18n="copy-code">Copy code</button>
+                <button type="button" class="btn btn--ghost" id="export-png" data-i18n="download-png">Download PNG</button>
+                <button type="button" class="btn btn--ghost" id="export-file" data-i18n="download-file">Download file</button>
+            </div>
+        </dialog>
 
-            <div class="separator">
-                <label for="scheme-type">Scheme Type:</label>
-                <select id="scheme-type-mobile" name="scheme-type">
-                    <option value="analogous">Analogous</option>
-                    <option value="complementary">Complementary</option>
-                    <option value="triadic">Triadic</option>
-                    <option value="tetradic">Tetradic</option>
-                    <option value="monochromatic">Monochromatic</option>
-                    <option value="shades_and_tints">Shades and Tints</option>
-                </select>
+        <!-- IMAGE -->
+        <dialog class="sheet" id="image-sheet" aria-labelledby="image-title">
+            <div class="sheet__head">
+                <h2 id="image-title" data-i18n="image-title">From an image</h2>
+                <button type="button" class="sheet__close" data-close data-i18n-label="close">×</button>
             </div>
+            <p class="muted" data-i18n="image-desc">Pick or drop a photo. Its main colours are found right here in your browser; the image is never uploaded.</p>
+            <label class="drop" id="drop">
+                <input type="file" id="image-input" accept="image/*" />
+                <img id="image-preview" alt="" hidden />
+                <span class="drop__text" id="drop-text">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 16V4M7 9l5-5 5 5M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+                    </svg>
+                    <span data-i18n="image-drop">Choose or drop an image</span>
+                </span>
+            </label>
+            <div class="mini-strip" id="image-strip" hidden></div>
+            <div class="actions actions--end">
+                <button type="button" class="btn" id="image-use" disabled data-i18n="image-use">Use these colours</button>
+            </div>
+        </dialog>
 
-            <div class="separator">
-                <button id="generate-palette-btn-mobile">Generate</button>
+        <!-- HELP -->
+        <dialog class="sheet" id="help-sheet" aria-labelledby="help-title">
+            <div class="sheet__head">
+                <h2 id="help-title" data-i18n="help-title">Shortcuts</h2>
+                <button type="button" class="sheet__close" data-close data-i18n-label="close">×</button>
             </div>
-        </div>
+            <ul class="keys">
+                <li><span><kbd>space</kbd></span><span data-i18n="k-space">New palette (locked colours stay)</span></li>
+                <li><span><kbd>1</kbd>–<kbd>9</kbd></span><span data-i18n="k-num">Lock or unlock that colour</span></li>
+                <li><span><kbd>C</kbd></span><span data-i18n="k-copy">Copy every colour</span></li>
+                <li><span><kbd>Ctrl</kbd> <kbd>Z</kbd></span><span data-i18n="k-undo">Undo</span></li>
+                <li><span><kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>Z</kbd></span><span data-i18n="k-redo">Redo</span></li>
+                <li><span><kbd>S</kbd></span><span data-i18n="k-save">Save the palette</span></li>
+                <li><span><kbd>E</kbd></span><span data-i18n="k-export">Open export</span></li>
+            </ul>
+            <h3 class="label" data-i18n="tips">Tips</h3>
+            <ul class="rules">
+                <li data-i18n="tip-1">Click a hex code to copy it, or the swatch itself to change it.</li>
+                <li data-i18n="tip-2">Drag the handle to reorder colours.</li>
+                <li data-i18n="tip-3">The badge shows the WCAG contrast of text on that colour.</li>
+                <li data-i18n="tip-4">The address bar always holds your palette: bookmark or send it.</li>
+            </ul>
+        </dialog>
+
+        <!-- colour-blind simulation filters (Machado et al. 2009, severity 1.0) -->
+        <svg class="sr-only" aria-hidden="true" focusable="false">
+            <filter id="cb-protanopia" color-interpolation-filters="linearRGB">
+                <feColorMatrix type="matrix" values="0.152 1.053 -0.205 0 0  0.115 0.786 0.099 0 0  -0.004 -0.048 1.052 0 0  0 0 0 1 0" />
+            </filter>
+            <filter id="cb-deuteranopia" color-interpolation-filters="linearRGB">
+                <feColorMatrix type="matrix" values="0.367 0.861 -0.228 0 0  0.280 0.673 0.047 0 0  -0.012 0.043 0.969 0 0  0 0 0 1 0" />
+            </filter>
+            <filter id="cb-tritanopia" color-interpolation-filters="linearRGB">
+                <feColorMatrix type="matrix" values="1.256 -0.077 -0.179 0 0  -0.078 0.931 0.148 0 0  0.005 0.691 0.304 0 0  0 0 0 1 0" />
+            </filter>
+            <filter id="cb-achromatopsia" color-interpolation-filters="linearRGB">
+                <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0" />
+            </filter>
+        </svg>
+
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
         <!-- FOOTER -->
-        <footer class="footer">
-            <div class="links">
-                <a
-                    href="https://github.com/acrazypie/colorPaletteGenerator"
-                    target="_blank"
-                    id="github-ft">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="currentColor"
-                        class="bi bi-github"
-                        viewBox="0 0 16 16">
-                        <path
-                            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8" />
-                    </svg>
-                </a>
-
-                <a href="https://egenesio.com" target="_blank" id="site-ft"
-                    ><svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="currentColor"
-                        class="bi bi-person-workspace"
-                        viewBox="0 0 16 16">
-                        <path
-                            d="M4 16s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-5.95a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                        <path
-                            d="M2 1a2 2 0 0 0-2 2v9.5A1.5 1.5 0 0 0 1.5 14h.653a5.4 5.4 0 0 1 1.066-2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v9h-2.219c.554.654.89 1.373 1.066 2h.653a1.5 1.5 0 0 0 1.5-1.5V3a2 2 0 0 0-2-2z" />
-                    </svg>
-                </a>
-                <a
-                    href="https://ko-fi.com/egenesio"
-                    target="_blank"
-                    id="kofi-ft">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="currentColor"
-                        class="bi bi-cup-hot-fill"
-                        viewBox="0 0 16 16">
-                        <path
-                            fill-rule="evenodd"
-                            d="M.5 6a.5.5 0 0 0-.488.608l1.652 7.434A2.5 2.5 0 0 0 4.104 16h5.792a2.5 2.5 0 0 0 2.44-1.958l.131-.59a3 3 0 0 0 1.3-5.854l.221-.99A.5.5 0 0 0 13.5 6zM13 12.5a2 2 0 0 1-.316-.025l.867-3.898A2.001 2.001 0 0 1 13 12.5" />
-                        <path
-                            d="m4.4.8-.003.004-.014.019a4 4 0 0 0-.204.31 2 2 0 0 0-.141.267c-.026.06-.034.092-.037.103v.004a.6.6 0 0 0 .091.248c.075.133.178.272.308.445l.01.012c.118.158.26.347.37.543.112.2.22.455.22.745 0 .188-.065.368-.119.494a3 3 0 0 1-.202.388 5 5 0 0 1-.253.382l-.018.025-.005.008-.002.002A.5.5 0 0 1 3.6 4.2l.003-.004.014-.019a4 4 0 0 0 .204-.31 2 2 0 0 0 .141-.267c.026-.06.034-.092.037-.103a.6.6 0 0 0-.09-.252A4 4 0 0 0 3.6 2.8l-.01-.012a5 5 0 0 1-.37-.543A1.53 1.53 0 0 1 3 1.5c0-.188.065-.368.119-.494.059-.138.134-.274.202-.388a6 6 0 0 1 .253-.382l.025-.035A.5.5 0 0 1 4.4.8m3 0-.003.004-.014.019a4 4 0 0 0-.204.31 2 2 0 0 0-.141.267c-.026.06-.034.092-.037.103v.004a.6.6 0 0 0 .091.248c.075.133.178.272.308.445l.01.012c.118.158.26.347.37.543.112.2.22.455.22.745 0 .188-.065.368-.119.494a3 3 0 0 1-.202.388 5 5 0 0 1-.253.382l-.018.025-.005.008-.002.002A.5.5 0 0 1 6.6 4.2l.003-.004.014-.019a4 4 0 0 0 .204-.31 2 2 0 0 0 .141-.267c.026-.06.034-.092.037-.103a.6.6 0 0 0-.09-.252A4 4 0 0 0 6.6 2.8l-.01-.012a5 5 0 0 1-.37-.543A1.53 1.53 0 0 1 6 1.5c0-.188.065-.368.119-.494.059-.138.134-.274.202-.388a6 6 0 0 1 .253-.382l.025-.035A.5.5 0 0 1 7.4.8m3 0-.003.004-.014.019a4 4 0 0 0-.204.31 2 2 0 0 0-.141.267c-.026.06-.034.092-.037.103v.004a.6.6 0 0 0 .091.248c.075.133.178.272.308.445l.01.012c.118.158.26.347.37.543.112.2.22.455.22.745 0 .188-.065.368-.119.494a3 3 0 0 1-.202.388 5 5 0 0 1-.252.382l-.019.025-.005.008-.002.002A.5.5 0 0 1 9.6 4.2l.003-.004.014-.019a4 4 0 0 0 .204-.31 2 2 0 0 0 .141-.267c.026-.06.034-.092.037-.103a.6.6 0 0 0-.09-.252A4 4 0 0 0 9.6 2.8l-.01-.012a5 5 0 0 1-.37-.543A1.53 1.53 0 0 1 9 1.5c0-.188.065-.368.119-.494.059-.138.134-.274.202-.388a6 6 0 0 1 .253-.382l.025-.035A.5.5 0 0 1 10.4.8" />
-                    </svg>
-                    Consider donating!
-                </a>
-            </div>
-            <p>All rights reserved.</p>
+        <footer>
+            <span>palette · made by <a href="https://egenesio.com" rel="noopener">Elisa</a></span>
+            <nav aria-label="Footer">
+                <a href="https://github.com/acrazypie/colorPaletteGenerator" target="_blank" rel="noopener">github ↗</a>
+                <a href="https://ko-fi.com/egenesio" target="_blank" rel="noopener">ko-fi ↗</a>
+            </nav>
         </footer>
-
-        <!-- SCRIPTS -->
-        <script type="module" src="js/main.js"></script>
-        <script src="js/theme.js"></script>
     </body>
 </html>

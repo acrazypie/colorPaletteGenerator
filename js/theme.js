@@ -1,35 +1,50 @@
-document.addEventListener("DOMContentLoaded", async () => {
-    const body = document.body;
-    const themeBtn = document.getElementById("theme-toggle");
-    const lightIcon = document.getElementById("light-icon");
-    const darkIcon = document.getElementById("dark-icon");
+// The initial theme is set by the inline script in <head> (saved choice, else system).
+function syncThemeColor(theme) {
+    // browser bar / Android task switcher colour follows the in-app theme
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+        m.setAttribute("content", theme === "light" ? "#fafafa" : "#0a0a0a");
+    });
+}
+syncThemeColor(document.documentElement.getAttribute("data-theme"));
 
-    // Legge il tema salvato (o imposta dark di default)
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    body.classList.toggle("light-theme", savedTheme === "light");
+function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    syncThemeColor(theme);
+    try {
+        localStorage.setItem("theme", theme);
+    } catch (e) {}
+}
 
-    function setTheme(theme) {
-        const isLight = theme === "light";
-        body.classList.toggle("light-theme", isLight);
-        lightIcon.style.display = isLight ? "none" : "block";
-        darkIcon.style.display = isLight ? "block" : "none";
+function toggleTheme(event) {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = current === "dark" ? "light" : "dark";
+
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!document.startViewTransition || reduceMotion) {
+        applyTheme(next);
+        return;
     }
 
-    if (savedTheme === "light") {
-        setTheme("light");
-    } else {
-        setTheme("dark");
-    }
+    // Expand a circle from the click point (or the button's centre for
+    // keyboard activation) until it covers the whole viewport.
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX || rect.left + rect.width / 2;
+    const y = event.clientY || rect.top + rect.height / 2;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
 
-    function toggleTheme() {
-        const currentTheme = body.classList.contains("light-theme")
-            ? "light"
-            : "dark";
-        const newTheme = currentTheme === "light" ? "dark" : "light";
-        setTheme(newTheme);
-        localStorage.setItem("theme", newTheme);
-    }
+    const transition = document.startViewTransition(() => applyTheme(next));
+    transition.ready
+        .then(() => {
+            document.documentElement.animate(
+                { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+                {
+                    duration: 600,
+                    easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+                    pseudoElement: "::view-transition-new(root)",
+                },
+            );
+        })
+        .catch(() => {});
+}
 
-    // Inizializza l'icona corretta
-    themeBtn.addEventListener("click", toggleTheme);
-});
+document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
