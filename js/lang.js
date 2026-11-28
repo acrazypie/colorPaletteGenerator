@@ -22,9 +22,7 @@ async function fetchLang(lang) {
 }
 
 export async function setLanguage(lang) {
-    try {
-        localStorage.setItem("lang", lang);
-    } catch (e) {}
+    window.PaletteStore.set("lang", lang);
     document.documentElement.setAttribute("lang", lang);
 
     const current = document.getElementById("lang-current");
@@ -89,10 +87,7 @@ export function initLang() {
         });
     });
 
-    let savedLang = null;
-    try {
-        savedLang = localStorage.getItem("lang");
-    } catch (e) {}
+    const savedLang = window.PaletteStore.get("lang");
     const browserLang = (navigator.language || "en").split("-")[0];
     return setLanguage(
         SUPPORTED_LANGS.includes(savedLang)

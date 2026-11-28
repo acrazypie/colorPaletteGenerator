@@ -27,27 +27,28 @@ const KEY_STATE = "palette.state";
 const KEY_SAVED = "palette.saved";
 const KEY_PREFS = "palette.prefs";
 
+// PaletteStore (js/store.js) is localStorage in a browser, Preferences in the app
+const { isNative, nativeHook } = window.PalettePlatform;
+const SITE = "https://palette.egenesio.com/";
 const store = {
     get(key, fallback) {
         try {
-            const v = JSON.parse(localStorage.getItem(key));
+            const v = JSON.parse(window.PaletteStore.get(key));
             return v ?? fallback;
         } catch (e) {
             return fallback;
         }
     },
     set(key, value) {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-        } catch (e) {}
+        window.PaletteStore.set(key, JSON.stringify(value));
     },
 };
 
 /* ─── STATE ──────────────────────────────────────────────── */
 // colors: [{ hex, locked }], base: hex, scheme: one of SCHEMES, auto: the scheme "auto" last picked
 let state = { colors: [], base: "#FF5733", scheme: "analogous", auto: null };
-let prefs = { format: "hex", vision: "none", exportTab: "css", ...store.get(KEY_PREFS, {}) };
-let saved = store.get(KEY_SAVED, []);
+let prefs = { format: "hex", vision: "none", exportTab: "css" };
+let saved = [];
 
 let past = [];
 let future = [];
@@ -87,6 +88,7 @@ function persist() {
 
 function undo() {
     if (!past.length) return;
+    nativeHook("undo");
     future.push(snapshot());
     restore(past.pop());
     persist();
@@ -94,6 +96,7 @@ function undo() {
 }
 function redo() {
     if (!future.length) return;
+    nativeHook("redo");
     past.push(snapshot());
     restore(future.pop());
     persist();
@@ -127,6 +130,7 @@ function nextBase() {
 }
 
 function shuffle() {
+    nativeHook("generate");
     change(
         () => {
             state.base = nextBase();
@@ -253,6 +257,23 @@ function paintChrome() {
     $("#t-save").classList.toggle("on", isSaved);
     $("#t-save").setAttribute("aria-pressed", String(isSaved));
     $$("#saved-list .row").forEach((row) => row.classList.toggle("current", row.dataset.key === list.join()));
+    nativeHook("state", info());
+}
+
+/** What the app's own bars need: the current palette and which buttons work. */
+function info() {
+    const list = hexes();
+    return {
+        colors: list,
+        locked: state.colors.map((c) => c.locked),
+        scheme: state.scheme,
+        canUndo: past.length > 0,
+        canRedo: future.length > 0,
+        canAdd: list.length < MAX,
+        canRemove: list.length > MIN,
+        isSaved: saved.some((p) => p.colors.join() === list.join()),
+        savedCount: saved.length,
+    };
 }
 
 function renderScheme() {
@@ -317,6 +338,12 @@ function toast(msg, chip) {
 }
 
 async function copyText(text) {
+    const handled = nativeHook("copy", text);
+    if (handled !== undefined) {
+        const ok = !!(await Promise.resolve(handled).catch(() => false));
+        if (ok) nativeHook("copied");
+        return ok;
+    }
     try {
         await navigator.clipboard.writeText(text);
         return true;
@@ -473,6 +500,8 @@ function openExport() {
     openSheet("#export-sheet");
 }
 function download(blob, name) {
+    // the app saves the file and opens the share sheet; <a download> does nothing in a WebView
+    if (nativeHook("save", blob, name) !== undefined) return;
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -579,6 +608,7 @@ function toggleSave() {
         saved = saved.slice(0, 60);
         toast(t("saved-toast"));
     }
+    nativeHook("saved", at < 0);
     store.set(KEY_SAVED, saved);
     renderSaved();
     paintChrome();
@@ -608,7 +638,10 @@ $("#saved-list").addEventListener("click", (e) => {
 /* ─── SHARE ──────────────────────────────────────────────── */
 async function share() {
     persist();
-    const url = location.href;
+    // in the app, location is https://localhost/…, so share the website's link instead
+    const url = isNative ? SITE + location.hash : location.href;
+    const handled = nativeHook("share", { title: "Palette", text: hexes().join(" "), url });
+    if (handled !== undefined) return handled;
     if (navigator.share && matchMedia("(pointer: coarse)").matches) {
         try {
             await navigator.share({ title: "Palette", text: hexes().join(" "), url });
@@ -631,6 +664,7 @@ strip.addEventListener("click", (e) => {
         change(() => {
             state.colors[i].locked = !state.colors[i].locked;
         });
+        nativeHook("lock", state.colors[i].locked);
     } else if (e.target.closest(".sw__btn--shades")) openShades(i);
     else if (e.target.closest(".sw__btn--remove")) removeColor(i);
 });
@@ -675,6 +709,7 @@ strip.addEventListener("pointermove", (e) => {
     const [moved] = state.colors.splice(drag.i, 1);
     state.colors.splice(target, 0, moved);
     drag.i = target;
+    nativeHook("reorder");
     renderStrip();
     $(`.sw[data-i="${target}"]`).classList.add("dragging");
 });
@@ -805,7 +840,10 @@ document.addEventListener("keydown", (e) => {
         if (!e.repeat) shuffle();
     } else if (/^[1-9]$/.test(key)) {
         const i = Number(key) - 1;
-        if (state.colors[i]) change(() => (state.colors[i].locked = !state.colors[i].locked));
+        if (state.colors[i]) {
+            change(() => (state.colors[i].locked = !state.colors[i].locked));
+            nativeHook("lock", state.colors[i].locked);
+        }
     } else if (key === "c") copyAll();
     else if (key === "s") toggleSave();
     else if (key === "e") openExport();
@@ -838,6 +876,9 @@ document.addEventListener("langchange", () => {
 });
 
 (async function start() {
+    await window.PaletteStore.ready;
+    prefs = { ...prefs, ...store.get(KEY_PREFS, {}) };
+    saved = store.get(KEY_SAVED, []);
     const fromUrl = fromHash();
     const last = store.get(KEY_STATE, null);
     if (last && Array.isArray(last.colors) && last.colors.every((c) => normalizeHex(c.hex))) {
@@ -859,3 +900,30 @@ document.addEventListener("langchange", () => {
     render({ anim: true });
     persist();
 })();
+
+/* ─── APP API ────────────────────────────────────────────── */
+// For the iOS / Android app's own bars and back button (unused on the website).
+window.Palette = {
+    info,
+    generate: shuffle,
+    undo,
+    redo,
+    addColor,
+    removeColor: () => removeColor(),
+    toggleSave,
+    share,
+    copyAll,
+    openExport,
+    openImage: () => openSheet("#image-sheet"),
+    openHelp: () => openSheet("#help-sheet"),
+    loadImage,
+    toast,
+    /** Closes the top open sheet; false when none was open (Android back). */
+    closeSheet() {
+        // a sheet still playing its closing animation counts as closed
+        const open = $$("dialog").filter((d) => d.open && !d.classList.contains("closing"));
+        if (!open.length) return false;
+        closeSheet(open[open.length - 1]);
+        return true;
+    },
+};

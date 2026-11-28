@@ -10,9 +10,7 @@ syncThemeColor(document.documentElement.getAttribute("data-theme"));
 function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     syncThemeColor(theme);
-    try {
-        localStorage.setItem("theme", theme);
-    } catch (e) {}
+    window.PaletteStore.set("theme", theme);
 }
 
 function toggleTheme(event) {
